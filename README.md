@@ -45,7 +45,7 @@ Pause node additionally has:
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone <repo-url> comfyui-bridge
+git clone https://github.com/itribs/comfyui-bridge.git
 ```
 
 ## License
