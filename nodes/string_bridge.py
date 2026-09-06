@@ -12,7 +12,7 @@ class RB_StringBridge:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text",)
     OUTPUT_NODE = False
-    DESCRIPTION = "Pause execution and edit a string value. The input text is passed through from the connected node, and you can modify it in the multiline editor before continuing."
+    DESCRIPTION = "Pause execution and edit a string value. Input is optional; if unconnected, the edit widget value is used."
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -24,10 +24,10 @@ class RB_StringBridge:
                     "dynamicPrompts": False,
                 }),
                 "timeout": ("FLOAT", {
-                    "default": 0,
+                    "default": -1,
                     "min": -1,
                     "step": 1,
-                    "tooltip": "Seconds to wait. 0 = infinite, -1 = skip pause",
+                    "tooltip": "Seconds to wait. -1 = infinite, 0 = skip pause",
                 }),
             },
             "optional": {
@@ -45,7 +45,7 @@ class RB_StringBridge:
     def bridge(self, text_edit, timeout, text=None, unique_id=None, prompt=None, extra_pnginfo=None):
         if text is None:
             text = text_edit
-        if timeout <= -1:
+        if timeout == 0:
             server.PromptServer.instance.send_sync(
                 "string_bridge_session",
                 {"node_id": unique_id, "text": text, "passthrough": True},

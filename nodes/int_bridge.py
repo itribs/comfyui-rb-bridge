@@ -12,7 +12,7 @@ class RB_IntBridge:
     RETURN_TYPES = ("INT",)
     RETURN_NAMES = ("value",)
     OUTPUT_NODE = False
-    DESCRIPTION = "Pause execution and edit an integer value. The input number is passed through from the connected node, and you can modify it before continuing."
+    DESCRIPTION = "Pause execution and edit an integer value. Input is optional; if unconnected, the edit widget value is used."
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -22,10 +22,10 @@ class RB_IntBridge:
                     "default": 0,
                 }),
                 "timeout": ("FLOAT", {
-                    "default": 0,
+                    "default": -1,
                     "min": -1,
                     "step": 1,
-                    "tooltip": "Seconds to wait. 0 = infinite, -1 = skip pause",
+                    "tooltip": "Seconds to wait. -1 = infinite, 0 = skip pause",
                 }),
             },
             "optional": {
@@ -43,7 +43,7 @@ class RB_IntBridge:
     def bridge(self, value_edit, timeout, value=None, unique_id=None, prompt=None, extra_pnginfo=None):
         if value is None:
             value = value_edit
-        if timeout <= -1:
+        if timeout == 0:
             server.PromptServer.instance.send_sync(
                 "int_bridge_session",
                 {"node_id": unique_id, "value": value, "passthrough": True},

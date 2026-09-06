@@ -25,10 +25,10 @@ class RB_Pause:
                     "tooltip": "Force pause even if input has not changed",
                 }),
                 "timeout": ("FLOAT", {
-                    "default": 0,
+                    "default": -1,
                     "min": -1,
                     "step": 1,
-                    "tooltip": "Seconds to wait. 0 = infinite, -1 = skip pause",
+                    "tooltip": "Seconds to wait. -1 = infinite, 0 = skip pause",
                 }),
             },
             "hidden": {
@@ -45,7 +45,7 @@ class RB_Pause:
         return False
 
     def pause(self, any, force_pause=False, timeout=0, unique_id=None, prompt=None, extra_pnginfo=None):
-        if timeout <= -1:
+        if timeout == 0:
             return {
                 "ui": {"value": [any]},
                 "result": (any,),
