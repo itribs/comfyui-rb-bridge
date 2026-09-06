@@ -21,7 +21,7 @@ class RB_Pause:
             "required": {
                 "any": ("*",),
                 "force_pause": ("BOOLEAN", {
-                    "default": False,
+                    "default": True,
                     "tooltip": "Force pause even if input has not changed",
                 }),
                 "timeout": ("FLOAT", {
@@ -47,7 +47,7 @@ class RB_Pause:
     def pause(self, any, force_pause=False, timeout=0, unique_id=None, prompt=None, extra_pnginfo=None):
         if timeout == 0:
             return {
-                "ui": {"value": [any]},
+                "ui": {},
                 "result": (any,),
             }
 
