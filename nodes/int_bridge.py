@@ -11,15 +11,13 @@ class RB_IntBridge:
     FUNCTION = "bridge"
     RETURN_TYPES = ("INT",)
     RETURN_NAMES = ("value",)
-    OUTPUT_NODE = True
+    OUTPUT_NODE = False
+    DESCRIPTION = "Pause execution and edit an integer value. The input number is passed through from the connected node, and you can modify it before continuing."
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "value": ("INT", {
-                    "forceInput": True,
-                }),
                 "value_edit": ("INT", {
                     "default": 0,
                 }),
@@ -30,6 +28,11 @@ class RB_IntBridge:
                     "tooltip": "Seconds to wait. 0 = infinite, -1 = skip pause",
                 }),
             },
+            "optional": {
+                "value": ("INT", {
+                    "forceInput": True,
+                }),
+            },
             "hidden": {
                 "unique_id": "UNIQUE_ID",
                 "prompt": "PROMPT",
@@ -37,8 +40,14 @@ class RB_IntBridge:
             },
         }
 
-    def bridge(self, value, value_edit, timeout, unique_id=None, prompt=None, extra_pnginfo=None):
+    def bridge(self, value_edit, timeout, value=None, unique_id=None, prompt=None, extra_pnginfo=None):
+        if value is None:
+            value = value_edit
         if timeout <= -1:
+            server.PromptServer.instance.send_sync(
+                "int_bridge_session",
+                {"node_id": unique_id, "value": value, "passthrough": True},
+            )
             return {
                 "ui": {"value": [value]},
                 "result": (value,),
@@ -60,6 +69,10 @@ class RB_IntBridge:
         finally:
             state = int_bridge_states.pop(unique_id, None)
             edited_value = state["edited_value"] if state else value
+            server.PromptServer.instance.send_sync(
+                "int_bridge_resume",
+                {"node_id": unique_id},
+            )
 
         return {
             "ui": {"value": [edited_value]},

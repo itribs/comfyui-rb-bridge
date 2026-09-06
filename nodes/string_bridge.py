@@ -11,15 +11,13 @@ class RB_StringBridge:
     FUNCTION = "bridge"
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text",)
-    OUTPUT_NODE = True
+    OUTPUT_NODE = False
+    DESCRIPTION = "Pause execution and edit a string value. The input text is passed through from the connected node, and you can modify it in the multiline editor before continuing."
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "text": ("STRING", {
-                    "forceInput": True,
-                }),
                 "text_edit": ("STRING", {
                     "multiline": True,
                     "default": "",
@@ -32,6 +30,11 @@ class RB_StringBridge:
                     "tooltip": "Seconds to wait. 0 = infinite, -1 = skip pause",
                 }),
             },
+            "optional": {
+                "text": ("STRING", {
+                    "forceInput": True,
+                }),
+            },
             "hidden": {
                 "unique_id": "UNIQUE_ID",
                 "prompt": "PROMPT",
@@ -39,8 +42,14 @@ class RB_StringBridge:
             },
         }
 
-    def bridge(self, text, text_edit, timeout, unique_id=None, prompt=None, extra_pnginfo=None):
+    def bridge(self, text_edit, timeout, text=None, unique_id=None, prompt=None, extra_pnginfo=None):
+        if text is None:
+            text = text_edit
         if timeout <= -1:
+            server.PromptServer.instance.send_sync(
+                "string_bridge_session",
+                {"node_id": unique_id, "text": text, "passthrough": True},
+            )
             return {
                 "ui": {"text": [text]},
                 "result": (text,),
@@ -62,6 +71,10 @@ class RB_StringBridge:
         finally:
             state = bridge_states.pop(unique_id, None)
             edited_text = state["edited_text"] if state else text
+            server.PromptServer.instance.send_sync(
+                "string_bridge_resume",
+                {"node_id": unique_id},
+            )
 
         return {
             "ui": {"text": [edited_text]},

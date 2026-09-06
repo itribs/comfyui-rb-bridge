@@ -11,15 +11,13 @@ class RB_BoolBridge:
     FUNCTION = "bridge"
     RETURN_TYPES = ("BOOLEAN",)
     RETURN_NAMES = ("value",)
-    OUTPUT_NODE = True
+    OUTPUT_NODE = False
+    DESCRIPTION = "Pause execution and toggle a boolean value. The input is passed through from the connected node, and you can toggle it before continuing."
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "value": ("BOOLEAN", {
-                    "forceInput": True,
-                }),
                 "value_edit": ("BOOLEAN", {
                     "default": False,
                 }),
@@ -30,6 +28,11 @@ class RB_BoolBridge:
                     "tooltip": "Seconds to wait. 0 = infinite, -1 = skip pause",
                 }),
             },
+            "optional": {
+                "value": ("BOOLEAN", {
+                    "forceInput": True,
+                }),
+            },
             "hidden": {
                 "unique_id": "UNIQUE_ID",
                 "prompt": "PROMPT",
@@ -37,8 +40,14 @@ class RB_BoolBridge:
             },
         }
 
-    def bridge(self, value, value_edit, timeout, unique_id=None, prompt=None, extra_pnginfo=None):
+    def bridge(self, value_edit, timeout, value=None, unique_id=None, prompt=None, extra_pnginfo=None):
+        if value is None:
+            value = value_edit
         if timeout <= -1:
+            server.PromptServer.instance.send_sync(
+                "bool_bridge_session",
+                {"node_id": unique_id, "value": value, "passthrough": True},
+            )
             return {
                 "ui": {"value": [value]},
                 "result": (value,),
@@ -60,6 +69,10 @@ class RB_BoolBridge:
         finally:
             state = bool_bridge_states.pop(unique_id, None)
             edited_value = state["edited_value"] if state else value
+            server.PromptServer.instance.send_sync(
+                "bool_bridge_resume",
+                {"node_id": unique_id},
+            )
 
         return {
             "ui": {"value": [edited_value]},

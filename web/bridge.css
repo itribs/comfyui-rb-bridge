@@ -6,12 +6,14 @@
     min-height: unset;
     height: 26px;
     display: block;
+    user-select: none;
 }
 
 .bridge-btn-disabled {
     opacity: 0.4;
     cursor: not-allowed;
     background: var(--component-node-widget-background);
+    pointer-events: none;
 }
 
 .bridge-btn-enabled {

@@ -11,23 +11,27 @@ class RB_FloatBridge:
     FUNCTION = "bridge"
     RETURN_TYPES = ("FLOAT",)
     RETURN_NAMES = ("value",)
-    OUTPUT_NODE = True
+    OUTPUT_NODE = False
+    DESCRIPTION = "Pause execution and edit a float value. The input number is passed through from the connected node, and you can modify it before continuing."
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "value": ("FLOAT", {
-                    "forceInput": True,
-                }),
                 "value_edit": ("FLOAT", {
                     "default": 0.0,
+                    "step": 0.00001,
                 }),
                 "timeout": ("FLOAT", {
                     "default": 0,
                     "min": -1,
                     "step": 1,
                     "tooltip": "Seconds to wait. 0 = infinite, -1 = skip pause",
+                }),
+            },
+            "optional": {
+                "value": ("FLOAT", {
+                    "forceInput": True,
                 }),
             },
             "hidden": {
@@ -37,8 +41,14 @@ class RB_FloatBridge:
             },
         }
 
-    def bridge(self, value, value_edit, timeout, unique_id=None, prompt=None, extra_pnginfo=None):
+    def bridge(self, value_edit, timeout, value=None, unique_id=None, prompt=None, extra_pnginfo=None):
+        if value is None:
+            value = value_edit
         if timeout <= -1:
+            server.PromptServer.instance.send_sync(
+                "float_bridge_session",
+                {"node_id": unique_id, "value": value, "passthrough": True},
+            )
             return {
                 "ui": {"value": [value]},
                 "result": (value,),
@@ -60,6 +70,10 @@ class RB_FloatBridge:
         finally:
             state = float_bridge_states.pop(unique_id, None)
             edited_value = state["edited_value"] if state else value
+            server.PromptServer.instance.send_sync(
+                "float_bridge_resume",
+                {"node_id": unique_id},
+            )
 
         return {
             "ui": {"value": [edited_value]},

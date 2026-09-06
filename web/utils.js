@@ -108,6 +108,9 @@ export function getNode(nodeId) {
 export function confirmBridge(node, apiUrl, editWidgetName, valueKey, defaultValue) {
     if (!node._bridge_active) return;
 
+    node._bridge_active = false;
+    disableButtons(node);
+
     const body = { node_id: node._execution_id || String(node.id) };
 
     if (editWidgetName !== null) {
@@ -124,15 +127,17 @@ export function confirmBridge(node, apiUrl, editWidgetName, valueKey, defaultVal
         .then((response) => {
             if (response.ok) {
                 console.log(`[Bridge] Confirmed via ${apiUrl}`);
-                node._bridge_active = false;
-                disableButtons(node);
             } else {
                 console.error(`[Bridge] Failed to confirm: ${apiUrl}`);
+                node._bridge_active = true;
+                enableButtons(node);
                 alert("Confirmation failed, please try again.");
             }
         })
         .catch((error) => {
             console.error(`[Bridge] Error confirming: ${apiUrl}`, error);
+            node._bridge_active = true;
+            enableButtons(node);
             alert("Confirmation failed: " + error.message);
         });
 }

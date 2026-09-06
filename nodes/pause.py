@@ -12,7 +12,8 @@ class RB_Pause:
     FUNCTION = "pause"
     RETURN_TYPES = ("*",)
     RETURN_NAMES = ("value",)
-    OUTPUT_NODE = True
+    OUTPUT_NODE = False
+    DESCRIPTION = "Pause execution to inspect intermediate results. Passes through any type of input without modification. Set force_pause to true to pause on every run."
 
     @classmethod
     def INPUT_TYPES(cls):

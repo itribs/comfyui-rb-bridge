@@ -2,6 +2,7 @@ import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import {
     enableButtons,
+    disableButtons,
     getNode,
     createButtons,
     confirmBridge,
@@ -13,12 +14,10 @@ app.registerExtension({
 
     async setup() {
         api.addEventListener("bool_bridge_session", (event) => {
-            const { node_id, value } = event.detail;
+            const { node_id, value, passthrough } = event.detail;
             const node = getNode(node_id);
             if (!node) return;
 
-            node._bridge_active = true;
-            node._execution_id = node_id;
             node.current_value = value;
 
             const editWidget = node.widgets.find((w) => w.name === "value_edit");
@@ -27,7 +26,19 @@ app.registerExtension({
                 app.graph.setDirtyCanvas(true);
             }
 
-            enableButtons(node);
+            if (!passthrough) {
+                node._bridge_active = true;
+                node._execution_id = node_id;
+                enableButtons(node);
+            }
+        });
+
+        api.addEventListener("bool_bridge_resume", (event) => {
+            const { node_id } = event.detail;
+            const node = getNode(node_id);
+            if (!node) return;
+            node._bridge_active = false;
+            disableButtons(node);
         });
     },
 
