@@ -6,7 +6,7 @@ from .utils import run_pause_loop, register_routes, make_confirm_route
 bridge_states: dict[str, dict] = {}
 
 
-class StringBridge:
+class RB_StringBridge:
     CATEGORY = "bridge"
     FUNCTION = "bridge"
     RETURN_TYPES = ("STRING",)
@@ -20,16 +20,16 @@ class StringBridge:
                 "text": ("STRING", {
                     "forceInput": True,
                 }),
+                "text_edit": ("STRING", {
+                    "multiline": True,
+                    "default": "",
+                    "dynamicPrompts": False,
+                }),
                 "timeout": ("FLOAT", {
                     "default": 0,
                     "min": -1,
                     "step": 1,
                     "tooltip": "Seconds to wait. 0 = infinite, -1 = skip pause",
-                }),
-                "text_edit": ("STRING", {
-                    "multiline": True,
-                    "default": "",
-                    "dynamicPrompts": False,
                 }),
             },
             "hidden": {
@@ -49,7 +49,7 @@ class StringBridge:
         event = threading.Event()
         bridge_states[unique_id] = {
             "event": event,
-            "edited_text": text_edit if text_edit and text_edit.strip() else text,
+            "edited_text": text,
         }
 
         server.PromptServer.instance.send_sync(
@@ -57,10 +57,11 @@ class StringBridge:
             {"node_id": unique_id, "text": text},
         )
 
-        run_pause_loop(event, timeout)
-
-        state = bridge_states.pop(unique_id, None)
-        edited_text = state["edited_text"] if state else text
+        try:
+            run_pause_loop(event, timeout)
+        finally:
+            state = bridge_states.pop(unique_id, None)
+            edited_text = state["edited_text"] if state else text
 
         return {
             "ui": {"text": [edited_text]},

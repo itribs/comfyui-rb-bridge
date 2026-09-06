@@ -9,7 +9,7 @@ import {
 
 
 app.registerExtension({
-    name: "comfyui.FloatBridge",
+    name: "comfyui.ribs.FloatBridge",
 
     async setup() {
         api.addEventListener("float_bridge_session", (event) => {
@@ -18,6 +18,7 @@ app.registerExtension({
             if (!node) return;
 
             node._bridge_active = true;
+            node._execution_id = node_id;
             node.current_value = value;
 
             const editWidget = node.widgets.find((w) => w.name === "value_edit");
@@ -31,15 +32,13 @@ app.registerExtension({
     },
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeData.name !== "FloatBridge") return;
+        if (nodeData.name !== "RB_FloatBridge") return;
 
         const onNodeCreated = nodeType.prototype.onNodeCreated;
 
         nodeType.prototype.onNodeCreated = function () {
             const result = onNodeCreated?.apply(this, arguments);
 
-            this.color = "#1a3a2a";
-            this.bgcolor = "#0a2a1a";
             this.current_value = 0.0;
 
             createButtons(this, () => {

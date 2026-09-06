@@ -1,4 +1,5 @@
 import threading
+import uuid
 import server
 
 from .utils import run_pause_loop, register_routes, make_confirm_route
@@ -6,7 +7,7 @@ from .utils import run_pause_loop, register_routes, make_confirm_route
 pause_states: dict[str, dict] = {}
 
 
-class Pause:
+class RB_Pause:
     CATEGORY = "bridge"
     FUNCTION = "pause"
     RETURN_TYPES = ("*",)
@@ -17,16 +18,16 @@ class Pause:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "value": ("*",),
+                "any": ("*",),
+                "force_pause": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Force pause even if input has not changed",
+                }),
                 "timeout": ("FLOAT", {
                     "default": 0,
                     "min": -1,
                     "step": 1,
                     "tooltip": "Seconds to wait. 0 = infinite, -1 = skip pause",
-                }),
-                "force_pause": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Force pause even if input has not changed",
                 }),
             },
             "hidden": {
@@ -36,11 +37,17 @@ class Pause:
             },
         }
 
-    def pause(self, value, timeout, force_pause=False, unique_id=None, prompt=None, extra_pnginfo=None):
+    @classmethod
+    def IS_CHANGED(cls, force_pause=False, **kwargs):
+        if force_pause:
+            return uuid.uuid4().hex
+        return False
+
+    def pause(self, any, force_pause=False, timeout=0, unique_id=None, prompt=None, extra_pnginfo=None):
         if timeout <= -1:
             return {
-                "ui": {"value": [value]},
-                "result": (value,),
+                "ui": {"value": [any]},
+                "result": (any,),
             }
 
         event = threading.Event()
@@ -49,20 +56,21 @@ class Pause:
         PromptServer = server.PromptServer.instance
         PromptServer.send_sync(
             "pause_session",
-            {"node_id": unique_id, "value": value},
+            {"node_id": unique_id},
         )
 
-        run_pause_loop(event, timeout)
-
-        pause_states.pop(unique_id, None)
-        PromptServer.send_sync(
-            "pause_resume",
-            {"node_id": unique_id, "value": value},
-        )
+        try:
+            run_pause_loop(event, timeout)
+        finally:
+            pause_states.pop(unique_id, None)
+            PromptServer.send_sync(
+                "pause_resume",
+                {"node_id": unique_id},
+            )
 
         return {
-            "ui": {"value": [value]},
-            "result": (value,),
+            "ui": {},
+            "result": (any,),
         }
 
 

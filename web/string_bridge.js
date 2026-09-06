@@ -1,17 +1,15 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import {
-    setButtonState,
     createButtons,
     enableButtons,
-    disableButtons,
     getNode,
     confirmBridge,
 } from "./utils.js";
 
 
 app.registerExtension({
-    name: "comfyui.StringBridge",
+    name: "comfyui.ribs.StringBridge",
 
     async setup() {
         api.addEventListener("string_bridge_session", (event) => {
@@ -20,10 +18,11 @@ app.registerExtension({
             if (!node) return;
 
             node._bridge_active = true;
+            node._execution_id = node_id;
             node.current_text = text;
 
             const textWidget = node.widgets.find((w) => w.name === "text_edit");
-            if (textWidget && text) {
+            if (textWidget && text !== undefined) {
                 textWidget.value = text;
                 app.graph.setDirtyCanvas(true);
             }
@@ -33,15 +32,13 @@ app.registerExtension({
     },
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeData.name !== "StringBridge") return;
+        if (nodeData.name !== "RB_StringBridge") return;
 
         const onNodeCreated = nodeType.prototype.onNodeCreated;
 
         nodeType.prototype.onNodeCreated = function () {
             const result = onNodeCreated?.apply(this, arguments);
 
-            this.color = "#2a1a3a";
-            this.bgcolor = "#1a0a2a";
             this.current_text = "";
 
             createButtons(this, () => {

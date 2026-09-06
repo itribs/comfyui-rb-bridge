@@ -10,7 +10,7 @@ import {
 
 
 app.registerExtension({
-    name: "comfyui.Pause",
+    name: "comfyui.ribs.Pause",
 
     async setup() {
         api.addEventListener("pause_session", (event) => {
@@ -18,6 +18,7 @@ app.registerExtension({
             if (!node) return;
 
             node._bridge_active = true;
+            node._execution_id = event.detail.node_id;
             enableButtons(node);
         });
 
@@ -31,15 +32,13 @@ app.registerExtension({
     },
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeData.name !== "Pause") return;
+        if (nodeData.name !== "RB_Pause") return;
 
         const onNodeCreated = nodeType.prototype.onNodeCreated;
 
         nodeType.prototype.onNodeCreated = function () {
             const result = onNodeCreated?.apply(this, arguments);
 
-            this.color = "#2a2a3a";
-            this.bgcolor = "#1a1a2a";
             this._bridge_active = false;
 
             createButtons(this, () => {

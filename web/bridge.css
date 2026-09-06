@@ -1,0 +1,21 @@
+.bridge-btn {
+    padding: 2px 4px;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+    min-height: unset;
+    height: 26px;
+    display: block;
+}
+
+.bridge-btn-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: var(--component-node-widget-background);
+}
+
+.bridge-btn-enabled {
+    opacity: 1;
+    cursor: pointer;
+    background: var(--primary-background);
+}

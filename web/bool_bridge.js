@@ -9,7 +9,7 @@ import {
 
 
 app.registerExtension({
-    name: "comfyui.BoolBridge",
+    name: "comfyui.ribs.BoolBridge",
 
     async setup() {
         api.addEventListener("bool_bridge_session", (event) => {
@@ -18,6 +18,7 @@ app.registerExtension({
             if (!node) return;
 
             node._bridge_active = true;
+            node._execution_id = node_id;
             node.current_value = value;
 
             const editWidget = node.widgets.find((w) => w.name === "value_edit");
@@ -31,15 +32,13 @@ app.registerExtension({
     },
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeData.name !== "BoolBridge") return;
+        if (nodeData.name !== "RB_BoolBridge") return;
 
         const onNodeCreated = nodeType.prototype.onNodeCreated;
 
         nodeType.prototype.onNodeCreated = function () {
             const result = onNodeCreated?.apply(this, arguments);
 
-            this.color = "#3a2a1a";
-            this.bgcolor = "#2a1a0a";
             this.current_value = false;
 
             createButtons(this, () => {

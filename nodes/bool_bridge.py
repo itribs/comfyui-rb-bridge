@@ -6,7 +6,7 @@ from .utils import run_pause_loop, register_routes, make_confirm_route
 bool_bridge_states: dict[str, dict] = {}
 
 
-class BoolBridge:
+class RB_BoolBridge:
     CATEGORY = "bridge"
     FUNCTION = "bridge"
     RETURN_TYPES = ("BOOLEAN",)
@@ -18,6 +18,9 @@ class BoolBridge:
         return {
             "required": {
                 "value": ("BOOLEAN", {
+                    "forceInput": True,
+                }),
+                "value_edit": ("BOOLEAN", {
                     "default": False,
                 }),
                 "timeout": ("FLOAT", {
@@ -25,9 +28,6 @@ class BoolBridge:
                     "min": -1,
                     "step": 1,
                     "tooltip": "Seconds to wait. 0 = infinite, -1 = skip pause",
-                }),
-                "value_edit": ("BOOLEAN", {
-                    "default": False,
                 }),
             },
             "hidden": {
@@ -47,7 +47,7 @@ class BoolBridge:
         event = threading.Event()
         bool_bridge_states[unique_id] = {
             "event": event,
-            "edited_value": value_edit,
+            "edited_value": value,
         }
 
         server.PromptServer.instance.send_sync(
@@ -55,10 +55,11 @@ class BoolBridge:
             {"node_id": unique_id, "value": value},
         )
 
-        run_pause_loop(event, timeout)
-
-        state = bool_bridge_states.pop(unique_id, None)
-        edited_value = state["edited_value"] if state else value
+        try:
+            run_pause_loop(event, timeout)
+        finally:
+            state = bool_bridge_states.pop(unique_id, None)
+            edited_value = state["edited_value"] if state else value
 
         return {
             "ui": {"value": [edited_value]},

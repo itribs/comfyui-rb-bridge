@@ -6,7 +6,7 @@ from .utils import run_pause_loop, register_routes, make_confirm_route
 float_bridge_states: dict[str, dict] = {}
 
 
-class FloatBridge:
+class RB_FloatBridge:
     CATEGORY = "bridge"
     FUNCTION = "bridge"
     RETURN_TYPES = ("FLOAT",)
@@ -20,14 +20,14 @@ class FloatBridge:
                 "value": ("FLOAT", {
                     "forceInput": True,
                 }),
+                "value_edit": ("FLOAT", {
+                    "default": 0.0,
+                }),
                 "timeout": ("FLOAT", {
                     "default": 0,
                     "min": -1,
                     "step": 1,
                     "tooltip": "Seconds to wait. 0 = infinite, -1 = skip pause",
-                }),
-                "value_edit": ("FLOAT", {
-                    "default": 0.0,
                 }),
             },
             "hidden": {
@@ -47,7 +47,7 @@ class FloatBridge:
         event = threading.Event()
         float_bridge_states[unique_id] = {
             "event": event,
-            "edited_value": value_edit if value_edit is not None else value,
+            "edited_value": value,
         }
 
         server.PromptServer.instance.send_sync(
@@ -55,10 +55,11 @@ class FloatBridge:
             {"node_id": unique_id, "value": value},
         )
 
-        run_pause_loop(event, timeout)
-
-        state = float_bridge_states.pop(unique_id, None)
-        edited_value = state["edited_value"] if state else value
+        try:
+            run_pause_loop(event, timeout)
+        finally:
+            state = float_bridge_states.pop(unique_id, None)
+            edited_value = state["edited_value"] if state else value
 
         return {
             "ui": {"value": [edited_value]},

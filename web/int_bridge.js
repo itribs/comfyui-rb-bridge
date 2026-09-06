@@ -9,7 +9,7 @@ import {
 
 
 app.registerExtension({
-    name: "comfyui.IntBridge",
+    name: "comfyui.ribs.IntBridge",
 
     async setup() {
         api.addEventListener("int_bridge_session", (event) => {
@@ -18,6 +18,7 @@ app.registerExtension({
             if (!node) return;
 
             node._bridge_active = true;
+            node._execution_id = node_id;
             node.current_value = value;
 
             const editWidget = node.widgets.find((w) => w.name === "value_edit");
@@ -31,15 +32,13 @@ app.registerExtension({
     },
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeData.name !== "IntBridge") return;
+        if (nodeData.name !== "RB_IntBridge") return;
 
         const onNodeCreated = nodeType.prototype.onNodeCreated;
 
         nodeType.prototype.onNodeCreated = function () {
             const result = onNodeCreated?.apply(this, arguments);
 
-            this.color = "#1a2a3a";
-            this.bgcolor = "#0a1a2a";
             this.current_value = 0;
 
             createButtons(this, () => {
