@@ -1,0 +1,16 @@
+[project]
+name = "comfyui-rb-bridge"
+description = "A collection of pause-and-edit nodes for ComfyUI that let you interrupt workflow execution, inspect and modify values, then continue."
+version = "1.0.0"
+license = { file = "LICENSE" }
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/itribs/comfyui-rb-bridge"
+Documentation = "https://github.com/itribs/comfyui-rb-bridge/blob/main/README.md"
+"Bug Tracker" = "https://github.com/itribs/comfyui-rb-bridge/issues"
+
+[tool.comfy]
+PublisherId = "itribs"
+DisplayName = "comfyui-rb-bridge"
+Icon = ""
