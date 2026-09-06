@@ -9,7 +9,7 @@ import {
 
 
 app.registerExtension({
-    name: "comfyui.ribs.BoolBridge",
+    name: "comfyui.rb.BoolBridge",
 
     async setup() {
         api.addEventListener("bool_bridge_session", (event) => {

@@ -10,7 +10,7 @@ import {
 
 
 app.registerExtension({
-    name: "comfyui.ribs.Pause",
+    name: "comfyui.rb.Pause",
 
     async setup() {
         api.addEventListener("pause_session", (event) => {

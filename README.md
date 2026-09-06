@@ -46,7 +46,7 @@ All nodes share these parameters:
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/itribs/comfyui-bridge.git
+git clone https://github.com/itribs/comfyui-rb-bridge.git
 ```
 
 ## License

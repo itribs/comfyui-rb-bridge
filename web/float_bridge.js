@@ -9,7 +9,7 @@ import {
 
 
 app.registerExtension({
-    name: "comfyui.ribs.FloatBridge",
+    name: "comfyui.rb.FloatBridge",
 
     async setup() {
         api.addEventListener("float_bridge_session", (event) => {

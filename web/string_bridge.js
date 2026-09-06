@@ -9,7 +9,7 @@ import {
 
 
 app.registerExtension({
-    name: "comfyui.ribs.StringBridge",
+    name: "comfyui.rb.StringBridge",
 
     async setup() {
         api.addEventListener("string_bridge_session", (event) => {

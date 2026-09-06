@@ -9,7 +9,7 @@ import {
 
 
 app.registerExtension({
-    name: "comfyui.ribs.IntBridge",
+    name: "comfyui.rb.IntBridge",
 
     async setup() {
         api.addEventListener("int_bridge_session", (event) => {
