@@ -1,9 +1,9 @@
 import threading
 import server
 
-from .utils import run_pause_loop, register_routes, make_confirm_route
+from .utils import run_pause_loop, register_routes, make_confirm_route, make_sync_route
 
-bridge_states: dict[str, dict] = {}
+string_bridge_states: dict[str, dict] = {}
 
 
 class RB_StringBridge:
@@ -43,9 +43,27 @@ class RB_StringBridge:
         }
 
     def bridge(self, text_edit, timeout, text=None, unique_id=None, prompt=None, extra_pnginfo=None):
+        connected = text is not None
         if text is None:
             text = text_edit
+
+        current_params = (text, text_edit, timeout)
+        last_params = getattr(self, "_last_params", None)
+
+        if last_params is not None and current_params == last_params:
+            output = getattr(self, "_last_output", text)
+            server.PromptServer.instance.send_sync(
+                "string_bridge_session",
+                {"node_id": unique_id, "text": output, "passthrough": True},
+            )
+            return {
+                "ui": {"text": [output]},
+                "result": (output,),
+            }
+
         if timeout == 0:
+            self._last_params = current_params
+            self._last_output = text
             server.PromptServer.instance.send_sync(
                 "string_bridge_session",
                 {"node_id": unique_id, "text": text, "passthrough": True},
@@ -56,7 +74,7 @@ class RB_StringBridge:
             }
 
         event = threading.Event()
-        bridge_states[unique_id] = {
+        string_bridge_states[unique_id] = {
             "event": event,
             "edited_text": text,
         }
@@ -69,8 +87,27 @@ class RB_StringBridge:
         try:
             run_pause_loop(event, timeout)
         finally:
-            state = bridge_states.pop(unique_id, None)
+            state = string_bridge_states.pop(unique_id, None)
             edited_text = state["edited_text"] if state else text
+            if not isinstance(edited_text, type(text)):
+                try:
+                    edited_text = type(text)(edited_text)
+                except (ValueError, TypeError):
+                    pass
+
+            if event.is_set():
+                if connected:
+                    self._last_params = (text, edited_text, timeout)
+                else:
+                    self._last_params = (edited_text, edited_text, timeout)
+                self._last_output = edited_text
+            else:
+                if connected:
+                    self._last_params = (text, edited_text, timeout)
+                else:
+                    self._last_params = (edited_text, edited_text, timeout)
+                self._last_output = edited_text
+
             server.PromptServer.instance.send_sync(
                 "string_bridge_resume",
                 {"node_id": unique_id},
@@ -84,7 +121,10 @@ class RB_StringBridge:
 
 def add_routes(routes):
     routes.post("/string_bridge/confirm")(
-        make_confirm_route(bridge_states, "edited_text")
+        make_confirm_route(string_bridge_states, "edited_text")
+    )
+    routes.post("/string_bridge/sync")(
+        make_sync_route(string_bridge_states, "edited_text")
     )
 
 

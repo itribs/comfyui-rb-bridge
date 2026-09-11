@@ -56,3 +56,23 @@ def make_confirm_route(states, value_key=None):
             )
 
     return confirm
+
+
+def make_sync_route(states, value_key):
+    async def sync(request):
+        try:
+            data = await request.json()
+            node_id = str(data.get("node_id"))
+
+            if node_id in states:
+                new_val = data.get(value_key)
+                states[node_id][value_key] = new_val
+                return web.json_response({"status": "success"})
+            return web.json_response({"status": "error"}, status=404)
+        except Exception as e:
+            return web.json_response(
+                {"status": "error", "message": str(e)},
+                status=500,
+            )
+
+    return sync

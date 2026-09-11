@@ -6,6 +6,9 @@ import {
     getNode,
     createButtons,
     confirmBridge,
+    showPauseModal,
+    closeCurrentModal,
+    clearModalQueue,
 } from "./utils.js";
 
 
@@ -20,14 +23,30 @@ app.registerExtension({
             node._bridge_active = true;
             node._execution_id = event.detail.node_id;
             enableButtons(node);
+
+            showPauseModal(
+                node,
+                node.title,
+                () => {
+                    confirmBridge(node, "/pause/confirm", null, null, null);
+                    closeCurrentModal();
+                },
+                () => {
+                    node._bridge_active = false;
+                    disableButtons(node);
+                    clearModalQueue();
+                    api.interrupt(null);
+                }
+            );
         });
 
         api.addEventListener("pause_resume", (event) => {
             const node = getNode(event.detail.node_id);
-            if (!node) return;
-
-            node._bridge_active = false;
-            disableButtons(node);
+            if (node) {
+                node._bridge_active = false;
+                disableButtons(node);
+            }
+            closeCurrentModal(event.detail.node_id);
         });
     },
 

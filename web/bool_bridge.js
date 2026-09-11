@@ -6,6 +6,11 @@ import {
     getNode,
     createButtons,
     confirmBridge,
+    setupWidgetSync,
+    showBridgeModal,
+    closeCurrentModal,
+    clearModalQueue,
+    getActiveModalEditedValue,
 } from "./utils.js";
 
 
@@ -22,7 +27,11 @@ app.registerExtension({
 
             const editWidget = node.widgets.find((w) => w.name === "value_edit");
             if (editWidget && value !== undefined) {
+                setupWidgetSync(node, editWidget, "/bool_bridge/sync", "edited_value");
+                node._bridge_sync_block = true;
+                node._edit_original = editWidget.value;
                 editWidget.value = value;
+                node._bridge_sync_block = false;
                 app.graph.setDirtyCanvas(true);
             }
 
@@ -30,15 +39,79 @@ app.registerExtension({
                 node._bridge_active = true;
                 node._execution_id = node_id;
                 enableButtons(node);
+
+                showBridgeModal(
+                    node,
+                    node.title,
+                    { inputType: "checkbox", value: value },
+                    (editedValue) => {
+                        disableButtons(node);
+                        node._edit_original = undefined;
+                        const editWidget = node.widgets.find((w) => w.name === "value_edit");
+                        if (editWidget) editWidget.value = editedValue;
+                        const body = {
+                            node_id: node._execution_id || String(node.id),
+                            edited_value: editedValue,
+                        };
+                        api.fetchApi("/bool_bridge/confirm", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(body),
+                        }).then((r) => {
+                            if (r.ok) {
+                                node._bridge_active = false;
+                                closeCurrentModal();
+                            } else {
+                                node._bridge_active = true;
+                                enableButtons(node);
+                                alert("Confirmation failed, please try again.");
+                            }
+                        }).catch((err) => {
+                            node._bridge_active = true;
+                            enableButtons(node);
+                            alert("Confirmation failed: " + err.message);
+                        });
+                    },
+                    () => {
+                        node._bridge_active = false;
+                        node._cancelled = true;
+                        disableButtons(node);
+                        clearModalQueue();
+                        api.interrupt(null);
+                    },
+                    "/bool_bridge/sync",
+                    "edited_value"
+                );
             }
         });
 
         api.addEventListener("bool_bridge_resume", (event) => {
             const { node_id } = event.detail;
             const node = getNode(node_id);
-            if (!node) return;
-            node._bridge_active = false;
-            disableButtons(node);
+            if (node) {
+                node._bridge_active = false;
+                disableButtons(node);
+
+                const editedValue = getActiveModalEditedValue();
+                if (editedValue !== undefined) {
+                    const editWidget = node.widgets.find((w) => w.name === "value_edit");
+                    if (editWidget) {
+                        editWidget.value = editedValue;
+                        app.graph.setDirtyCanvas(true);
+                    }
+                }
+
+                if (node._cancelled && node._edit_original !== undefined) {
+                    const editWidget = node.widgets.find((w) => w.name === "value_edit");
+                    if (editWidget) {
+                        editWidget.value = node._edit_original;
+                        app.graph.setDirtyCanvas(true);
+                    }
+                }
+                node._edit_original = undefined;
+                node._cancelled = false;
+            }
+            closeCurrentModal(node_id);
         });
     },
 

@@ -36,13 +36,14 @@ All nodes share the `timeout` parameter:
 | `0` | Skip pause, pass through immediately |
 | `>0` | Auto-continue after N seconds |
 
-## How It Works
+## Settings
 
-1. **Execution reaches the node** — the workflow pauses and the backend sends an event to the frontend
-2. **Buttons activate** — Continue and Cancel become clickable
-3. **Edit (Bridge nodes only)** — modify the value in the `value_edit` / `text_edit` widget directly on the node
-4. **Continue** — click Continue to resume with the edited value
-5. **Cancel** — click Cancel to interrupt the entire workflow
+The following settings are available in ComfyUI **Settings** → **RB Bridge**:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Show Dialog on Pause/Bridge** | `true` | When enabled, a centered dialog appears when a pause/bridge node is triggered. When disabled, only the embedded Continue/Cancel buttons on the node itself are used. |
+| **Show Dialog Only When Node Not in View** | `true` | When enabled, the dialog only appears when the node is not visible in the current canvas view. If you are already viewing the node's graph, no dialog is shown. This setting has no effect when "Show Dialog on Pause/Bridge" is disabled. |
 
 ## Installation
 
