@@ -27,7 +27,7 @@ All nodes share these parameters:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `action` | enum | `auto` | Pause behavior: `auto` = navigate if in view else dialog, `dialog` = always show popup, `focus` = navigate to node, `never` = skip pause entirely |
+| `action` | enum | `auto` | Pause behavior: `auto` = navigate if in view else dialog, `dialog` = always show popup, `focus` = navigate to node, `never` = no action, just pause |
 | `force_pause` | BOOLEAN | `false` (`true` for RB Pause) | When `true`, forces the node to pause on every execution even if the input hasn't changed |
 | `timeout` | FLOAT | `-1` | Seconds to wait. `-1` = infinite, `0` = skip pause, `>0` = auto-continue after N seconds |
 
