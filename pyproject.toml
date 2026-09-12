@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-rb-bridge"
 description = "A collection of pause-and-edit nodes for ComfyUI that let you interrupt workflow execution, inspect and modify values, then continue."
-version = "1.0.0"
+version = "1.0.1"
 license = { file = "LICENSE" }
 dependencies = []
 
