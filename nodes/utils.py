@@ -1,5 +1,6 @@
 import time
 import threading
+import traceback
 import server
 from aiohttp import web
 
@@ -17,7 +18,8 @@ def run_pause_loop(event, timeout):
             throw_exception_if_processing_interrupted()
             if timeout > 0 and time.monotonic() - start >= timeout:
                 break
-            event.wait(timeout=0.1)
+            if event.wait(0.1):
+                break
     except InterruptProcessingException:
         nodes.interrupt_processing()
         raise
@@ -30,6 +32,19 @@ def register_routes(add_routes_fn, name):
             add_routes_fn(prompt_server.routes)
     except Exception as e:
         print(f"[{name}] Warning: Could not register routes: {e}")
+
+
+def register_bridge_routes(cls, session_name, state_key="edited_value"):
+    def add_routes(routes):
+        routes.post(f"/{session_name}/confirm")(
+            make_confirm_route(cls._states, state_key)
+        )
+        routes.post(f"/{session_name}/sync")(
+            make_sync_route(cls._states, state_key)
+        )
+
+    name = "".join(word.title() for word in session_name.replace("_", " ").split())
+    register_routes(add_routes, name)
 
 
 def make_confirm_route(states, value_key=None):
@@ -50,6 +65,7 @@ def make_confirm_route(states, value_key=None):
             states[node_id]["event"].set()
             return web.json_response({"status": "success"})
         except Exception as e:
+            traceback.print_exc()
             return web.json_response(
                 {"status": "error", "message": str(e)},
                 status=500,
@@ -70,6 +86,7 @@ def make_sync_route(states, value_key):
                 return web.json_response({"status": "success"})
             return web.json_response({"status": "error"}, status=404)
         except Exception as e:
+            traceback.print_exc()
             return web.json_response(
                 {"status": "error", "message": str(e)},
                 status=500,

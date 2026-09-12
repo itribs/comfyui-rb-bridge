@@ -1,135 +1,16 @@
-import { app } from "../../scripts/app.js";
-import { api } from "../../scripts/api.js";
-import {
-    enableButtons,
-    disableButtons,
-    getNode,
-    createButtons,
-    confirmBridge,
-    setupWidgetSync,
-    showBridgeModal,
-    closeCurrentModal,
-    clearModalQueue,
-    getActiveModalEditedValue,
-} from "./utils.js";
+import { createExtension } from "./factory.js";
 
-
-app.registerExtension({
+createExtension({
     name: "comfyui.rb.BoolBridge",
-
-    async setup() {
-        api.addEventListener("bool_bridge_session", (event) => {
-            const { node_id, value, passthrough } = event.detail;
-            const node = getNode(node_id);
-            if (!node) return;
-
-            node.current_value = value;
-
-            const editWidget = node.widgets.find((w) => w.name === "value_edit");
-            if (editWidget && value !== undefined) {
-                setupWidgetSync(node, editWidget, "/bool_bridge/sync", "edited_value");
-                node._bridge_sync_block = true;
-                node._edit_original = editWidget.value;
-                editWidget.value = value;
-                node._bridge_sync_block = false;
-                app.graph.setDirtyCanvas(true);
-            }
-
-            if (!passthrough) {
-                node._bridge_active = true;
-                node._execution_id = node_id;
-                enableButtons(node);
-
-                showBridgeModal(
-                    node,
-                    node.title,
-                    { inputType: "checkbox", value: value },
-                    (editedValue) => {
-                        disableButtons(node);
-                        node._edit_original = undefined;
-                        const editWidget = node.widgets.find((w) => w.name === "value_edit");
-                        if (editWidget) editWidget.value = editedValue;
-                        const body = {
-                            node_id: node._execution_id || String(node.id),
-                            edited_value: editedValue,
-                        };
-                        api.fetchApi("/bool_bridge/confirm", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(body),
-                        }).then((r) => {
-                            if (r.ok) {
-                                node._bridge_active = false;
-                                closeCurrentModal();
-                            } else {
-                                node._bridge_active = true;
-                                enableButtons(node);
-                                alert("Confirmation failed, please try again.");
-                            }
-                        }).catch((err) => {
-                            node._bridge_active = true;
-                            enableButtons(node);
-                            alert("Confirmation failed: " + err.message);
-                        });
-                    },
-                    () => {
-                        node._bridge_active = false;
-                        node._cancelled = true;
-                        disableButtons(node);
-                        clearModalQueue();
-                        api.interrupt(null);
-                    },
-                    "/bool_bridge/sync",
-                    "edited_value"
-                );
-            }
-        });
-
-        api.addEventListener("bool_bridge_resume", (event) => {
-            const { node_id } = event.detail;
-            const node = getNode(node_id);
-            if (node) {
-                node._bridge_active = false;
-                disableButtons(node);
-
-                const editedValue = getActiveModalEditedValue();
-                if (editedValue !== undefined) {
-                    const editWidget = node.widgets.find((w) => w.name === "value_edit");
-                    if (editWidget) {
-                        editWidget.value = editedValue;
-                        app.graph.setDirtyCanvas(true);
-                    }
-                }
-
-                if (node._cancelled && node._edit_original !== undefined) {
-                    const editWidget = node.widgets.find((w) => w.name === "value_edit");
-                    if (editWidget) {
-                        editWidget.value = node._edit_original;
-                        app.graph.setDirtyCanvas(true);
-                    }
-                }
-                node._edit_original = undefined;
-                node._cancelled = false;
-            }
-            closeCurrentModal(node_id);
-        });
-    },
-
-    async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeData.name !== "RB_BoolBridge") return;
-
-        const onNodeCreated = nodeType.prototype.onNodeCreated;
-
-        nodeType.prototype.onNodeCreated = function () {
-            const result = onNodeCreated?.apply(this, arguments);
-
-            this.current_value = false;
-
-            createButtons(this, () => {
-                confirmBridge(this, "/bool_bridge/confirm", "value_edit", "edited_value", this.current_value);
-            });
-
-            return result;
-        };
-    },
+    typeName: "RB_BoolBridge",
+    sessionEvent: "bool_bridge_session",
+    resumeEvent: "bool_bridge_resume",
+    confirmUrl: "/bool_bridge/confirm",
+    syncUrl: "/bool_bridge/sync",
+    editWidgetName: "value_edit",
+    confirmValueKey: "edited_value",
+    detailValueKey: "value",
+    currentValueKey: "current_value",
+    defaultValue: false,
+    inputConfigFactory: (value) => ({ inputType: "checkbox", value }),
 });
